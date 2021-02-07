@@ -32,6 +32,7 @@
             ],
             "styles": [
               "src/styles.css",
+              "./src/assets/assets/common.css"
             ],
             "scripts": [
               "./src/assets/vendor/jquery.min.js",

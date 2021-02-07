@@ -2,7 +2,6 @@ import { AfterViewInit, Component, OnInit } from '@angular/core';
 declare var AgoraRTC: any;
 declare var $: any;
 
-
 @Component({
   selector: 'app-video',
   templateUrl: './video.component.html',
@@ -68,7 +67,145 @@ export class VideoComponent implements OnInit, AfterViewInit {
   }
   ngOnInit(): void {}
 
-  async join(): Promise<void> {
+  handleEvents(rtc: any) {
+    rtc.client.on('error', (err: string) => {
+      console.log(err);
+    });
+
+    rtc.client.on('peer-leave', (evt: any) => {
+      var id = evt.uid;
+      console.log('id', evt);
+      let streams = rtc.remoteStreams.filter((e: any) => id !== e.getId());
+      let peerStream = rtc.remoteStreams.find((e: any) => id === e.getId());
+      if (peerStream && peerStream.isPlaying()) {
+        peerStream.stop();
+      }
+      rtc.remoteStreams = streams;
+      if (id !== rtc.params.uid) {
+        this.removeView(id);
+      }
+      console.log('peer-leave', id);
+    });
+    // Occurs when the peer user leaves the channel; for example, the peer user calls Client.leave.
+
+    // Occurs when the local stream is published.
+    rtc.client.on('stream-published', (evt: any) => {
+      console.log('stream-published');
+    });
+
+    rtc.client.on('stream-added', (evt: any) => {
+      var remoteStream = evt.stream;
+      var id = remoteStream.getId();
+
+      if (id !== rtc.params.uid) {
+        rtc.client.subscribe(remoteStream, (err: any) => {
+          console.log('stream subscribe failed', err);
+        });
+      }
+      console.log('stream-added remote-uid: ', id);
+    });
+
+    rtc.client.on('stream-subscribed', (evt: any) => {
+      var remoteStream = evt.stream;
+      var id = remoteStream.getId();
+      rtc.remoteStreams.push(remoteStream);
+      this.addView(id);
+      remoteStream.play('remote_video_' + id);
+      console.log('stream-subscribed remote-uid: ', id);
+    });
+
+    rtc.client.on('stream-removed', (evt: any) => {
+      var remoteStream = evt.stream;
+      var id = remoteStream.getId();
+      if (remoteStream.isPlaying()) {
+        remoteStream.stop();
+      }
+      rtc.remoteStreams = rtc.remoteStreams.filter((stream: any) => {
+        return stream.getId() !== id;
+      });
+      this.removeView(id);
+      console.log('stream-removed remote-uid: ', id);
+    });
+    rtc.client.on('onTokenPrivilegeWillExpire', () => {
+      // After requesting a new token
+      // rtc.client.renewToken(token);
+      console.log('onTokenPrivilegeWillExpire');
+    });
+    rtc.client.on('onTokenPrivilegeDidExpire', () => {
+      // After requesting a new token
+      // client.renewToken(token);
+      console.log('onTokenPrivilegeDidExpire');
+    });
+  }
+  addView(id: any, show: any = true) {
+    console.log('este es el creador de addViwe');
+    if (!$('#' + id)[0]) {
+      $('<div/>', {
+        id: 'remote_video_panel_' + id,
+        class: 'video-view',
+      }).appendTo('#video');
+
+      $('<div/>', {
+        id: 'remote_video_' + id,
+        class: 'video-placeholder',
+      }).appendTo('#remote_video_panel_' + id);
+
+      $('<div/>', {
+        id: 'remote_video_info_' + id,
+        class: 'video-profile ' + (show ? '' : 'hide'),
+      }).appendTo('#remote_video_panel_' + id);
+
+      $('<div/>', {
+        id: 'video_autoplay_' + id,
+        class: 'autoplay-fallback hide',
+      }).appendTo('#remote_video_panel_' + id);
+    }
+  }
+
+  removeView(id: string) {
+    if ($('#remote_video_panel_' + id)[0]) {
+      $('#remote_video_panel_' + id).remove();
+    }
+  }
+
+  leaveAction() {
+    this.leave(this.rtc);
+  }
+
+  leave(rtc: any) {
+    rtc.client.leave(
+      () => {
+        // stop stream
+        if (rtc.localStream.isPlaying()) {
+          rtc.localStream.stop();
+        }
+        // close stream
+        rtc.localStream.close();
+        for (let i = 0; i < rtc.remoteStreams.length; i++) {
+          var stream = rtc.remoteStreams.shift();
+          var id = stream.getId();
+          if (stream.isPlaying()) {
+            stream.stop();
+          }
+          this.removeView(id);
+        }
+        rtc.localStream = null;
+        rtc.remoteStreams = [];
+        rtc.client = null;
+        console.log('client leaves channel success');
+        rtc.published = false;
+        rtc.joined = false;
+        console.log('leave success');
+      },
+      (err: any) => {
+        console.log('channel leave failed');
+        console.log('leave success');
+        console.error(err);
+      }
+    );
+  }
+
+  join() {
     /**
      * rtc: rtc object
      * option: {
@@ -100,9 +237,11 @@ export class VideoComponent implements OnInit, AfterViewInit {
 
     this.rtc.params = option;
 
+    this.handleEvents(this.rtc);
+
     this.rtc.client.init(
       option.appID,
-      async (): Promise<void> => {
+      () => {
         console.log('init success');
 
         /**
@@ -128,9 +267,11 @@ export class VideoComponent implements OnInit, AfterViewInit {
         this.rtc.client.join(
           option.token ? option.token : null,
           option.channel,
-          option.channel,
           option.uid == '' ? +option.uid : null,
-          async (uid: string): Promise<void> => {
+          (uid: string) => {
+            console.log(
+              'join channel: ' + option.channel + ' success, uid: ' + uid
+            );
             console.log(
               'join channel: ' + option.channel + ' success, uid: ' + uid
             );
@@ -142,7 +283,7 @@ export class VideoComponent implements OnInit, AfterViewInit {
             this.rtc.params.uid = uid;
 
             // create local stream+
-           let localStream = AgoraRTC.createStream({
+            let localStream = AgoraRTC.createStream({
               streamID: this.rtc.params.uid,
               audio: true,
               video: true,
@@ -152,26 +293,23 @@ export class VideoComponent implements OnInit, AfterViewInit {
             });
             this.rtc.localStream = localStream;
 
-
-            console.log('local ========')
+            console.log('local ========');
             console.log(localStream);
-            console.log('local ======== this')
+            console.log('local ======== this');
             console.log(this.rtc.localStream);
 
             // initialize local stream. Callback function executed after intitialization is done
             localStream.init(
-              async() => {
+              () => {
                 console.log('init local stream success');
                 // play stream with html element id "local_stream"
 
                 console.log('evento local_stream');
                 localStream.play('local_stream');
 
-                this.rtc.client.publish(localStream,  (err: any) => {
-
-
-                  console.error(err)
-                })
+                this.rtc.client.publish(localStream, (err: any) => {
+                  console.error(err);
+                });
 
                 // publish local stream
               },
