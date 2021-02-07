@@ -1,0 +1,69 @@
+<div class="navbar-fixed">
+  <nav class="agora-navbar">
+    <div class="nav-wrapper agora-primary-bg valign-wrapper">
+      <h5 class="left-align">Basic Communication</h5>
+      <a href="https://github.com/AgoraIO/Basic-Video-Call/tree/master/One-to-One-Video/Agora-Web-Tutorial-1to1" class="agora-github-pin"></a>
+    </div>
+  </nav>
+</div>
+
+<div id="form" class="row col l12 s12">
+  <div class="row container col l12 s12">
+    <div class="col" style="min-width: 433px; max-width: 443px">
+      <div class="card" style="margin-top: 0px; margin-bottom: 0px;">
+        <div class="row card-content" style="margin-bottom: 0px;">
+
+
+
+            <div class="row" style="margin: 0">
+              <div class="col s12">
+              <button class="btn btn-raised btn-primary waves-effect waves-light" id="join" (click)="join()">JOIN</button>
+              <button class="btn btn-raised btn-primary waves-effect waves-light" id="leave">LEAVE</button>
+
+              </div>
+            </div>
+        </div>
+      </div>
+
+    <div class="col s7">
+      <div class="video-grid" id="video">
+        <div class="video-view">
+          <div id="local_stream" class="video-placeholder"></div>
+          <div id="local_video_info" class="video-profile hide"></div>
+          <div id="video_autoplay_local" class="autoplay-fallback hide"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="row container col l12 s12">
+  <div class="col" style="min-width: 433px; max-width: 443px">
+    <div class="card" style="margin-top: 0px; margin-bottom: 0px;">
+      <div class="row card-content" style="margin-bottom: 0px;">
+
+
+
+
+        <div class="col s12">
+
+          <div class="input-field">
+            <label for="cameraId"  class="active">CAMERA</label>
+            <select name="cameraId" id="cameraId"></select>
+          </div>
+          <div >
+            <label for="microphoneId" class="active">MICROPHONE</label>
+            <select name="microphoneId" id="microphoneId"></select>
+          </div>
+
+        </div>
+
+
+
+
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,5 +1,8 @@
 {
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "cli": {
+    "analytics": "740f0702-8832-477d-b73e-b4229baa8ee6"
+  },
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
@@ -28,9 +31,12 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css",
             ],
-            "scripts": []
+            "scripts": [
+              "./src/assets/vendor/jquery.min.js",
+              "./src/assets/AgoraRTCSDK-3.4.0.js"
+            ]
           },
           "configurations": {
             "production": {
