@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 declare var AgoraRTC: any;
 declare var $: any;
-var localStream: any;
+
 
 @Component({
   selector: 'app-video',
@@ -142,7 +142,7 @@ export class VideoComponent implements OnInit, AfterViewInit {
             this.rtc.params.uid = uid;
 
             // create local stream+
-           localStream = AgoraRTC.createStream({
+           let localStream = AgoraRTC.createStream({
               streamID: this.rtc.params.uid,
               audio: true,
               video: true,
