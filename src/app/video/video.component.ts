@@ -45,6 +45,8 @@ export class VideoComponent implements OnInit, AfterViewInit {
     },
   };
 
+  remoteClients:any = [];
+
   options: optionsVideoCall | undefined;
   optionsShared: optionsVideoCall | undefined;
 
@@ -185,12 +187,21 @@ export class VideoComponent implements OnInit, AfterViewInit {
         id: 'video_autoplay_' + id,
         class: 'autoplay-fallback hide',
       }).appendTo('#remote_video_panel_' + id);
+
+      this.remoteClients.push(id);
+      console.log("..................this.remoteClients................");
+      console.log(this.remoteClients);
     }
   }
 
   removeView(id: string) {
     if ($('#remote_video_panel_' + id)[0]) {
-      $('#remote_video_panel_' + id).remove();
+      $('#remote_video_panel_' + id).remove()
+
+
+    this.remoteClients = this.remoteClients.filter((idremote:any) => idremote != id);
+      console.log("++++++++++++++++Remove+++++++++++++++");
+      console.log(this.remoteClients);
     }
   }
 
