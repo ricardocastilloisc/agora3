@@ -16,8 +16,7 @@ export interface optionsVideoCall {
   token: string;
 }
 
-export interface configCall
-{
+export interface configCall {
   streamID?: string;
   audio?: boolean;
   video?: boolean;
@@ -25,7 +24,6 @@ export interface configCall
   microphoneId?: any;
   cameraId?: any;
 }
-
 
 @Component({
   selector: 'app-video',
@@ -197,6 +195,10 @@ export class VideoComponent implements OnInit, AfterViewInit {
   }
 
   leaveAction() {
+    if (!this.rtc.joined) {
+      console.log('You are not in channel');
+      return;
+    }
     this.leave(this.rtc);
   }
 
@@ -252,7 +254,6 @@ export class VideoComponent implements OnInit, AfterViewInit {
   }
 
   shareStart() {
-
     shareClient = AgoraRTC.createClient({
       mode: 'rtc',
       codec: 'vp8',
@@ -318,6 +319,10 @@ export class VideoComponent implements OnInit, AfterViewInit {
   }
 
   join() {
+    if (this.rtc.joined) {
+      console.log('Your already joined');
+      return;
+    }
     /**
      * rtc: rtc object
      * option: {
@@ -385,6 +390,8 @@ export class VideoComponent implements OnInit, AfterViewInit {
             console.error(err);
           });
 
+          this.rtc.published = true;
+
           // publish local stream
         },
         (err: any): void => {
@@ -395,7 +402,6 @@ export class VideoComponent implements OnInit, AfterViewInit {
         }
       );
     });
-
   }
 
   ActionEnableDisableVideo() {
