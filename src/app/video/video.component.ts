@@ -349,7 +349,7 @@ export class VideoComponent implements OnInit, AfterViewInit {
       microphoneId: $('#microphoneId').val(),
       cameraId: $('#cameraId').val(),
       token:
-        '0069e6a9b0a859c4a7e9efe79b797c80b98IAAy7+KDG+9v7BikcGSO112yjjSKKdrPJYQp4XbNoweeAAx+f9gAAAAAEABwjq6PnnghYAEAAQCeeCFg',
+        '0069e6a9b0a859c4a7e9efe79b797c80b98IAA/poy70O2n0034YyINqZvOE/cBvm8Y8vkiXmywSAqvUAx+f9gAAAAAEABwjq6PVwIiYAEAAQBXAiJg',
     };
 
     this.options = option;
