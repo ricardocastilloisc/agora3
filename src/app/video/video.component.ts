@@ -2,21 +2,30 @@ import { AfterViewInit, Component, OnInit } from '@angular/core';
 declare var AgoraRTC: any;
 declare var $: any;
 
-var shareClient:any;
+var shareClient: any;
 var shareStream: any;
 
-
-export interface  optionsVideoCall
-{
-    mode?: string,
-    codec?: string,
-    appID?: string,
-    channel?: string,
-    uid?: string | number | null,
-    microphoneId?: string,
-    cameraId?: string,
-    token:string;
+export interface optionsVideoCall {
+  mode?: string;
+  codec?: string;
+  appID?: string;
+  channel?: string;
+  uid?: string | number | null;
+  microphoneId?: string;
+  cameraId?: string;
+  token: string;
 }
+
+export interface configCall
+{
+  streamID?: string;
+  audio?: boolean;
+  video?: boolean;
+  screen?: boolean;
+  microphoneId?: any;
+  cameraId?: any;
+}
+
 
 @Component({
   selector: 'app-video',
@@ -37,7 +46,6 @@ export class VideoComponent implements OnInit, AfterViewInit {
       uid: '',
     },
   };
-
 
   options: optionsVideoCall | undefined;
   optionsShared: optionsVideoCall | undefined;
@@ -86,8 +94,6 @@ export class VideoComponent implements OnInit, AfterViewInit {
     });
   }
   ngOnInit(): void {}
-
-
 
   handleEvents(rtc: any) {
     rtc.client.on('error', (err: string) => {
@@ -194,42 +200,24 @@ export class VideoComponent implements OnInit, AfterViewInit {
     this.leave(this.rtc);
   }
 
-  shareEnd(){
+  shareEnd() {
     try {
       shareClient && shareClient.unpublish(shareStream);
       shareStream && shareStream.close();
       shareClient &&
         shareClient.leave(
           () => {
-            console.log("Share client succeed to leave.");
+            console.log('Share client succeed to leave.');
           },
           () => {
-            console.log("Share client failed to leave.");
+            console.log('Share client failed to leave.');
           }
         );
     } finally {
       shareClient = null;
       shareStream = null;
     }
-  };
-
-
-
-/*
-  attendeeMode: "video"
-baseMode: "avc"
-cameraId: "65c1855e8d1a4b8dd5edf48555f18115ac2cf8c6cf4c4d352beaa0a0b8ba2212"
-channel: "test"
-displayMode: 1
-key: "9e6a9b0a859c4a7e9efe79b797c80b98"
-microphoneId: "default"
-resolution: 1.3333333333333333
-token: "0069e6a9b0a859c4a7e9efe79b797c80b98IAAy7+KDG+9v7BikcGSO112yjjSKKdrPJYQp4XbNoweeAAx+f9gAAAAAEABwjq6PnnghYAEAAQCeeCFg"
-transcode: "interop"
-uid: 1
-videoProfile: "480p_4"
-videoProfileLow: "120p,120p_1"
-*/
+  }
   leave(rtc: any) {
     rtc.client.leave(
       () => {
@@ -263,24 +251,17 @@ videoProfileLow: "120p,120p_1"
     );
   }
 
+  shareStart() {
 
-  shareStart () {
-
-
-    // Create a new client for the screen sharing stream.
-
-    // eslint-disable-next-line
     shareClient = AgoraRTC.createClient({
       mode: 'rtc',
       codec: 'vp8',
     });
-    // Create a new options object for screen sharing.
 
-
-    // Initalializes the client with the screen sharing options.
-    this.clientInit(shareClient, this.optionsShared).then( async  (uid: string): Promise<void> => {
+    this.clientInit(shareClient, this.optionsShared).then(
+      async (uid: string): Promise<void> => {
         // New config for screen sharing stream
-        let config = {
+        let config: configCall = {
           streamID: uid,
           audio: false,
           video: false,
@@ -292,47 +273,49 @@ videoProfileLow: "120p,120p_1"
         shareStream.init(
           () => {
             // Once the stream is intialized, update the relevant ui and publish the stream.
-            shareStream.on("stopScreenSharing", (): void => {
+            shareStream.on('stopScreenSharing', (): void => {
               this.shareEnd();
-              console.log("Stop Screen Sharing at" + new Date());
+              console.log('Stop Screen Sharing at' + new Date());
             });
-            shareClient.publish(shareStream, (err:string) => {
-              console.log("Publish share stream error: " + err);
-              console.log("getUserMedia failed", err);
+            shareClient.publish(shareStream, (err: string) => {
+              console.log('Publish share stream error: ' + err);
+              console.log('getUserMedia failed', err);
             });
           },
-          (err:string) => {
-            console.log(err)
+          (err: string) => {
+            console.log(err);
           }
         );
-      });
+      }
+    );
   }
 
-  streamInit (uid:string, config:any) :any {
+  streamInit(uid: string, config: configCall): any {
     let stream = AgoraRTC.createStream(config);
     return stream;
-  };
+  }
 
-  clientInit(client: any, options: optionsVideoCall | undefined):Promise<string> {
+  clientInit(
+    client: any,
+    options: optionsVideoCall | undefined
+  ): Promise<string> {
     return new Promise((resolve, reject): void => {
       // Initialize the agora client object with appid
       client.init(options?.appID, (): void => {
-
-          client.join(
-            options?.token,
-            options?.channel,
-            options?.uid,
-            (uid:string) => {
-              resolve(uid);
-            },
-            (err:string) => {
-              reject(err);
-            }
-          );
-        });
+        client.join(
+          options?.token,
+          options?.channel,
+          options?.uid == '' ? +options.uid : null,
+          (uid: string) => {
+            resolve(uid);
+          },
+          (err: string) => {
+            reject(err);
+          }
+        );
+      });
     });
   }
-
 
   join() {
     /**
@@ -366,8 +349,7 @@ videoProfileLow: "120p,120p_1"
 
     this.options = option;
 
-
-    this.optionsShared = Object.assign({},this.options);
+    this.optionsShared = Object.assign({}, this.options);
 
     this.optionsShared.uid = null;
 
@@ -375,100 +357,61 @@ videoProfileLow: "120p,120p_1"
 
     this.handleEvents(this.rtc);
 
-    this.rtc.client.init(
-      option.appID,
-      () => {
-        console.log('init success');
+    this.clientInit(this.rtc.client, this.options).then((uid) => {
+      this.rtc.joined = true;
 
-        /**
-         * Joins an AgoraRTC Channel
-         * This method joins an AgoraRTC channel.
-         * Parameters
-         * tokenOrKey: string | null
-         *    Low security requirements: Pass null as the parameter value.
-         *    High security requirements: Pass the string of the Token or Channel Key as the parameter value. See Use Security Keys for details.
-         *  channel: string
-         *    A string that provides a unique channel name for the Agora session. The length must be within 64 bytes. Supported character scopes:
-         *    26 lowercase English letters a-z
-         *    26 uppercase English letters A-Z
-         *    10 numbers 0-9
-         *    Space
-         *    "!", "#", "$", "%", "&", "(", ")", "+", "-", ":", ";", "<", "=", ".", ">", "?", "@", "[", "]", "^", "_", "{", "}", "|", "~", ","
-         *  uid: number | null
-         *    The user ID, an integer. Ensure this ID is unique. If you set the uid to null, the server assigns one and returns it in the onSuccess callback.
-         *   Note:
-         *      All users in the same channel should have the same type (number or string) of uid.
-         *      If you use a number as the user ID, it should be a 32-bit unsigned integer with a value ranging from 0 to (232-1).
-         **/
-        this.rtc.client.join(
-          option.token ? option.token : null,
-          option.channel,
-          option.uid == '' ? +option.uid : null,
-          (uid: string) => {
-            console.log(
-              'join channel: ' + option.channel + ' success, uid: ' + uid
-            );
-            console.log(
-              'join channel: ' + option.channel + ' success, uid: ' + uid
-            );
-            console.log(
-              'join channel: ' + option.channel + ' success, uid: ' + uid
-            );
-            this.rtc.joined = true;
+      this.rtc.params.uid = uid;
 
-            this.rtc.params.uid = uid;
+      let config: configCall = {
+        streamID: this.rtc.params.uid,
+        audio: true,
+        video: true,
+        screen: false,
+        microphoneId: option.microphoneId,
+        cameraId: option.cameraId,
+      };
 
-            // create local stream+
-            let localStream = AgoraRTC.createStream({
-              streamID: this.rtc.params.uid,
-              audio: true,
-              video: true,
-              screen: false,
-              microphoneId: option.microphoneId,
-              cameraId: option.cameraId,
-            });
-            this.rtc.localStream = localStream;
+      let localStream = this.streamInit(uid, config);
+      this.rtc.localStream = localStream;
+      localStream.init(
+        () => {
+          console.log('init local stream success');
+          // play stream with html element id "local_stream"
 
-            console.log('local ========');
-            console.log(localStream);
-            console.log('local ======== this');
-            console.log(this.rtc.localStream);
+          console.log('evento local_stream');
+          localStream.play('local_stream');
 
-            // initialize local stream. Callback function executed after intitialization is done
-            localStream.init(
-              () => {
-                console.log('init local stream success');
-                // play stream with html element id "local_stream"
+          this.rtc.client.publish(localStream, (err: any) => {
+            console.error(err);
+          });
 
-                console.log('evento local_stream');
-                localStream.play('local_stream');
+          // publish local stream
+        },
+        (err: any): void => {
+          console.log(
+            'stream init failed, please open console see more detail'
+          );
+          console.error('init local stream failed ', err);
+        }
+      );
+    });
 
-                this.rtc.client.publish(localStream, (err: any) => {
-                  console.error(err);
-                });
+  }
 
-                // publish local stream
-              },
-              (err: any): void => {
-                console.log(
-                  'stream init failed, please open console see more detail'
-                );
-                console.error('init local stream failed ', err);
-              }
-            );
-          },
-          (err: any) => {
-            console.log(
-              'client join failed, please open console see more detail'
-            );
-            console.error('client join failed', err);
-          }
-        );
-      },
-      (err: any) => {
-        console.log('client init failed, please open console see more detail');
-        console.error(err);
-      }
-    );
+  ActionEnableDisableVideo() {
+    this.EnableDisableVideo(this.rtc.localStream);
+  }
+  EnableDisableVideo(localStream: any): void {
+    localStream.isVideoOn()
+      ? localStream.disableVideo()
+      : localStream.enableVideo();
+  }
+  ActionEnableDisableAudio() {
+    this.EnableDisableAudio(this.rtc.localStream);
+  }
+  EnableDisableAudio(localStream: any) {
+    localStream.isAudioOn()
+      ? localStream.disableAudio()
+      : localStream.enableAudio();
   }
 }
