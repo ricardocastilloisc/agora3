@@ -2,6 +2,22 @@ import { AfterViewInit, Component, OnInit } from '@angular/core';
 declare var AgoraRTC: any;
 declare var $: any;
 
+var shareClient:any;
+var shareStream: any;
+
+
+export interface  optionsVideoCall
+{
+    mode?: string,
+    codec?: string,
+    appID?: string,
+    channel?: string,
+    uid?: string | number | null,
+    microphoneId?: string,
+    cameraId?: string,
+    token:string;
+}
+
 @Component({
   selector: 'app-video',
   templateUrl: './video.component.html',
@@ -11,7 +27,7 @@ export class VideoComponent implements OnInit, AfterViewInit {
   rtc = {
     client: AgoraRTC.createClient({
       mode: 'rtc',
-      codec: 'h264',
+      codec: 'vp8',
     }),
     joined: false,
     published: false,
@@ -21,6 +37,10 @@ export class VideoComponent implements OnInit, AfterViewInit {
       uid: '',
     },
   };
+
+
+  options: optionsVideoCall | undefined;
+  optionsShared: optionsVideoCall | undefined;
 
   cameraId: string | undefined;
 
@@ -66,6 +86,8 @@ export class VideoComponent implements OnInit, AfterViewInit {
     });
   }
   ngOnInit(): void {}
+
+
 
   handleEvents(rtc: any) {
     rtc.client.on('error', (err: string) => {
@@ -172,6 +194,42 @@ export class VideoComponent implements OnInit, AfterViewInit {
     this.leave(this.rtc);
   }
 
+  shareEnd(){
+    try {
+      shareClient && shareClient.unpublish(shareStream);
+      shareStream && shareStream.close();
+      shareClient &&
+        shareClient.leave(
+          () => {
+            console.log("Share client succeed to leave.");
+          },
+          () => {
+            console.log("Share client failed to leave.");
+          }
+        );
+    } finally {
+      shareClient = null;
+      shareStream = null;
+    }
+  };
+
+
+
+/*
+  attendeeMode: "video"
+baseMode: "avc"
+cameraId: "65c1855e8d1a4b8dd5edf48555f18115ac2cf8c6cf4c4d352beaa0a0b8ba2212"
+channel: "test"
+displayMode: 1
+key: "9e6a9b0a859c4a7e9efe79b797c80b98"
+microphoneId: "default"
+resolution: 1.3333333333333333
+token: "0069e6a9b0a859c4a7e9efe79b797c80b98IAAy7+KDG+9v7BikcGSO112yjjSKKdrPJYQp4XbNoweeAAx+f9gAAAAAEABwjq6PnnghYAEAAQCeeCFg"
+transcode: "interop"
+uid: 1
+videoProfile: "480p_4"
+videoProfileLow: "120p,120p_1"
+*/
   leave(rtc: any) {
     rtc.client.leave(
       () => {
@@ -205,6 +263,77 @@ export class VideoComponent implements OnInit, AfterViewInit {
     );
   }
 
+
+  shareStart () {
+
+
+    // Create a new client for the screen sharing stream.
+
+    // eslint-disable-next-line
+    shareClient = AgoraRTC.createClient({
+      mode: 'rtc',
+      codec: 'vp8',
+    });
+    // Create a new options object for screen sharing.
+
+
+    // Initalializes the client with the screen sharing options.
+    this.clientInit(shareClient, this.optionsShared).then( async  (uid: string): Promise<void> => {
+        // New config for screen sharing stream
+        let config = {
+          streamID: uid,
+          audio: false,
+          video: false,
+          screen: true,
+        };
+
+        // Intialize the screen sharing stream with the necessary parameters.
+        shareStream = this.streamInit(uid, config);
+        shareStream.init(
+          () => {
+            // Once the stream is intialized, update the relevant ui and publish the stream.
+            shareStream.on("stopScreenSharing", (): void => {
+              this.shareEnd();
+              console.log("Stop Screen Sharing at" + new Date());
+            });
+            shareClient.publish(shareStream, (err:string) => {
+              console.log("Publish share stream error: " + err);
+              console.log("getUserMedia failed", err);
+            });
+          },
+          (err:string) => {
+            console.log(err)
+          }
+        );
+      });
+  }
+
+  streamInit (uid:string, config:any) :any {
+    let stream = AgoraRTC.createStream(config);
+    return stream;
+  };
+
+  clientInit(client: any, options: optionsVideoCall | undefined):Promise<string> {
+    return new Promise((resolve, reject): void => {
+      // Initialize the agora client object with appid
+      client.init(options?.appID, (): void => {
+
+          client.join(
+            options?.token,
+            options?.channel,
+            options?.uid,
+            (uid:string) => {
+              resolve(uid);
+            },
+            (err:string) => {
+              reject(err);
+            }
+          );
+        });
+    });
+  }
+
+
   join() {
     /**
      * rtc: rtc object
@@ -220,12 +349,12 @@ export class VideoComponent implements OnInit, AfterViewInit {
 
     this.rtc.client = AgoraRTC.createClient({
       mode: 'rtc',
-      codec: 'h264',
+      codec: 'vp8',
     });
 
     let option = {
       mode: 'rtc',
-      codec: 'h264',
+      codec: 'vp8',
       appID: '9e6a9b0a859c4a7e9efe79b797c80b98',
       channel: 'test',
       uid: '',
@@ -234,6 +363,13 @@ export class VideoComponent implements OnInit, AfterViewInit {
       token:
         '0069e6a9b0a859c4a7e9efe79b797c80b98IAAy7+KDG+9v7BikcGSO112yjjSKKdrPJYQp4XbNoweeAAx+f9gAAAAAEABwjq6PnnghYAEAAQCeeCFg',
     };
+
+    this.options = option;
+
+
+    this.optionsShared = Object.assign({},this.options);
+
+    this.optionsShared.uid = null;
 
     this.rtc.params = option;
 
