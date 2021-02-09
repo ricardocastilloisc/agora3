@@ -5,6 +5,19 @@ declare var $: any;
 var shareClient: any;
 var shareStream: any;
 
+
+
+//ocular elementos
+//https://www.youtube.com/watch?v=kqv10KAhPAo
+
+//grid osea los elemntos
+//https://www.youtube.com/watch?v=b-hrxkgkG-s&t=276s
+
+//elementos sobre posicionados
+//https://www.youtube.com/watch?v=EqcyL3eU4os
+
+
+
 export interface optionsVideoCall {
   mode?: string;
   codec?: string;
@@ -170,12 +183,12 @@ export class VideoComponent implements OnInit, AfterViewInit {
     if (!$('#' + id)[0]) {
       $('<div/>', {
         id: 'remote_video_panel_' + id,
-        class: 'video-view',
+        class: 'video-view', //clase padre
       }).appendTo('#video');
 
       $('<div/>', {
         id: 'remote_video_' + id,
-        class: 'video-placeholder',
+        class: 'video-placeholder', //clase principal de video tamño del video
       }).appendTo('#remote_video_panel_' + id);
 
       $('<div/>', {
